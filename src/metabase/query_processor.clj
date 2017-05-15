@@ -8,6 +8,7 @@
              [query :as query]
              [query-execution :as query-execution :refer [QueryExecution]]]
             [metabase.query-processor.middleware
+             [add-dimension-projections :as add-proj]
              [add-implicit-clauses :as implicit-clauses]
              [add-row-count-and-status :as row-count-and-status]
              [add-settings :as add-settings]
@@ -83,6 +84,7 @@
       dev/check-results-format
       limit/limit
       cumulative-ags/handle-cumulative-aggregations
+      add-proj/add-inline-remaps
       implicit-clauses/add-implicit-clauses
       format-rows/format-rows
       expand-resolve/expand-resolve                    ; ▲▲▲ QUERY EXPANSION POINT  ▲▲▲ All functions *above* will see EXPANDED query during PRE-PROCESSING
