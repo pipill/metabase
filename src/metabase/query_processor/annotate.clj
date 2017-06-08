@@ -183,6 +183,25 @@
     (concat fields (for [k missing-keys]
                      (info-for-missing-key fields k (map k initial-rows))))))
 
+(defn- fixup-renamed-fields
+  "After executing the query, it's possible that java.jdbc changed the
+  name of the column that was originally in the query. This can happen
+  when java.jdbc finds two columns with the same name, it will append
+  an integer (like _2) on the end. When this is done on an existing
+  column in the query, this function fixes that up, updating the
+  column information we have with the new name that java.jdbc assigned
+  the column. The `add-unknown-fields-if-needed` function above is
+  similar, but is used when we don't have existing information on that
+  column and need to infer it."
+  [query actual-keys]
+  (update query :fields
+          (fn [fields]
+            (mapv (fn [expected-field actual-key]
+                    (if (not= (:field-name expected-field) (name actual-key))
+                      (assoc expected-field :field-name (name actual-key))
+                      expected-field))
+                  fields actual-keys))))
+
 (defn- convert-field-to-expected-format
   "Rename keys, provide default values, etc. for FIELD so it is in the format expected by the frontend."
   [field]
@@ -247,18 +266,21 @@
   "Collect the Fields referenced in QUERY, sort them according to the rules at the top
    of this page, format them as expected by the frontend, and return the results."
   [query result-keys initial-rows]
-  {:pre [(set? result-keys)]}
+  {:pre [(sequential? result-keys)]}
   (when (seq result-keys)
-    (->> (collect-fields (dissoc query :expressions))
-         (map qualify-field-name)
-         (add-aggregate-fields-if-needed query)
-         (map (u/rpartial update :field-name keyword))
-         (add-unknown-fields-if-needed result-keys initial-rows)
-         (sort/sort-fields query)
-         (map convert-field-to-expected-format)
-         (filter (comp (partial contains? result-keys) :name))
-         (m/distinct-by :name)
-         add-extra-info-to-fk-fields)))
+    (let [result-keys-set (set result-keys)
+          query-with-renamed-columns (fixup-renamed-fields query result-keys)]
+      (->> (dissoc query-with-renamed-columns :expressions)
+           collect-fields
+           (map qualify-field-name)
+           (add-aggregate-fields-if-needed query)
+           (map (u/rpartial update :field-name keyword))
+           (add-unknown-fields-if-needed result-keys-set initial-rows)
+           (sort/sort-fields query)
+           (map convert-field-to-expected-format)
+           (filter (comp (partial contains? result-keys-set) :name))
+           (m/distinct-by :name)
+           add-extra-info-to-fk-fields))))
 
 (defn annotate-and-sort
   "Post-process a structured query to add metadata to the results. This stage:
@@ -269,7 +291,7 @@
   [query {:keys [columns rows], :as results}]
   (let [row-maps (for [row rows]
                    (zipmap columns row))
-        cols    (resolve-sort-and-format-columns (:query query) (set columns) (take 10 row-maps))
+        cols    (resolve-sort-and-format-columns (:query query) columns (take 10 row-maps))
         columns (mapv :name cols)]
     (assoc results
       :cols    (vec (for [col cols]
