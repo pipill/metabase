@@ -77,7 +77,8 @@
    :row_count 1
    :data      {:rows        [[1]]
                :columns     ["count"]
-               :cols        [{:name "count", :base_type :type/Integer}]
+               :cols        [{:name "count", :base_type :type/Integer
+                              :remapped_to nil, :remapped_from nil}]
                :native_form {:collection "venues"
                              :query      native-query}}}
   (qp/process-query {:native   {:query      native-query

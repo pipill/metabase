@@ -54,8 +54,8 @@
   [{{breakout-fields :breakout, order-by :order-by} :query, :as query}]
   (if-not (qputil/mbql-query? query)
     query
-    (let [order-by-fields                   (set (map :field order-by))
-          implicit-breakout-order-by-fields (filter (partial (complement contains?) order-by-fields)
+    (let [order-by-fields                   (set (map (comp #(select-keys % [:field-id :fk-field-id]) :field) order-by))
+          implicit-breakout-order-by-fields (remove (comp order-by-fields #(select-keys % [:field-id :fk-field-id]))
                                                     breakout-fields)]
       (cond-> query
         (seq implicit-breakout-order-by-fields) (update-in [:query :order-by] concat (for [field implicit-breakout-order-by-fields]
