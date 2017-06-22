@@ -33,6 +33,9 @@
                          :type     :native
                          :database (data/id)}))))
 
+(def ^:private col-defaults
+  {:base_type :type/Text, :remapped_from nil, :remapped_to nil})
+
 ;; test druid native queries
 (expect-with-engine :druid
   {:row_count 2
@@ -40,12 +43,14 @@
    :data      {:columns     ["timestamp" "id" "user_name" "venue_price" "venue_name" "count"]
                :rows        [["2013-01-03T08:00:00.000Z" "931" "Simcha Yan" "1" "Kinaree Thai Bistro"       1]
                              ["2013-01-10T08:00:00.000Z" "285" "Kfir Caj"   "2" "Ruen Pair Thai Restaurant" 1]]
-               :cols        [{:name "timestamp",   :base_type :type/Text}
-                             {:name "id",          :base_type :type/Text}
-                             {:name "user_name",   :base_type :type/Text}
-                             {:name "venue_price", :base_type :type/Text}
-                             {:name "venue_name",  :base_type :type/Text}
-                             {:name "count",       :base_type :type/Integer}]
+               :cols        (mapv #(merge col-defaults %)
+                                  [{:name "timestamp"}
+                                   {:name "id"}
+                                   {:name "user_name"}
+                                   {:name "venue_price"}
+                                   {:name "venue_name"}
+                                   {:name "count"
+                                    :base_type :type/Integer}])
                :native_form {:query native-query-1}}}
   (process-native-query native-query-1))
 
