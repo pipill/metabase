@@ -216,7 +216,7 @@
   ([field output-name] (ag:filtered (filter:not (filter:nil? field))
                                     (ag:count output-name))))
 
-(defn create-aggregation-clause [output-name ag-type ag-field]
+(defn- create-aggregation-clause [output-name ag-type ag-field]
   (let [output-name-kwd (keyword output-name)]
     (match [ag-type ag-field]
       ;; For 'distinct values' queries (queries with a breakout by no aggregation) just aggregate by count, but name it :___count so it gets discarded automatically
