@@ -2,7 +2,7 @@
 # images hosted on Docker Hub https://hub.docker.com/r/metabase/metabase/ which use the
 # Dockerfile located at ./bin/docker/Dockerfile
 
-FROM java:openjdk-7-jre-alpine
+FROM pipill/armhf-openjdk:7-jre-alpine
 
 ENV JAVA_HOME=/usr/lib/jvm/default-jvm
 ENV PATH /usr/local/bin:$PATH
@@ -12,7 +12,7 @@ ENV FC_LANG en-US
 ENV LC_CTYPE en_US.UTF-8
 
 # install core build tools
-RUN apk add --update nodejs git wget bash python make g++ java-cacerts ttf-dejavu fontconfig && \
+RUN apk add --update nodejs nodejs-npm git wget bash python make g++ java-cacerts ttf-dejavu fontconfig && \
     npm install -g yarn && \
     ln -sf "${JAVA_HOME}/bin/"* "/usr/bin/"
 
@@ -32,7 +32,7 @@ WORKDIR /app/source
 RUN bin/build
 
 # remove unnecessary packages & tidy up
-RUN apk del nodejs git wget python make g++
+RUN apk del nodejs nodejs-npm git wget python make g++
 RUN rm -rf /root/.lein /root/.m2 /root/.node-gyp /root/.npm /root/.yarn /root/.yarn-cache /tmp/* /var/cache/apk/* /app/source/node_modules
 
 # expose our default runtime port
